@@ -1,0 +1,61 @@
+--- scripts/dkimproxy.out.original	2019-05-03 13:27:06.000000000 -0700
++++ scripts/dkimproxy.out	2019-05-03 13:28:04.000000000 -0700
+@@ -39,7 +39,6 @@
+ use Getopt::Long;
+ use Pod::Usage;
+ use IO::File;
+-use Sys::Syslog;
+ 
+ use Mail::DKIM 0.20;
+ use Mail::DKIM::Signer;
+@@ -319,20 +318,7 @@
+ 	my $peersockaddr = getpeername(STDOUT);
+ 	my ($port, $iaddr) = sockaddr_in($peersockaddr);
+ 	$ENV{REMOTE_ADDR} = inet_ntoa($iaddr);
+-
+-	# initialize syslog
+-	eval
+-	{
+-		openlog("dkimproxy.out", "perror,pid,ndelay", "mail");
+-		syslog("debug", '%s', "connect from $ENV{REMOTE_ADDR}");
+-	};
+-	if (my $E = $@)
+-	{
+-		chomp $E;
+-		print "421 Internal error (Syslog is down)\n";
+-		die "$E\n";
+-	}
+-
++	
+ 	$self->{debug} = $debugtrace;
+ 
+ 	$self->SUPER::process_request;
+@@ -376,10 +362,7 @@
+ 		$result = $dkim->result;
+ 		$result_detail = $dkim->result_detail;
+ 
+-		syslog("info", '%s',
+-			"DKIM signing - $result_detail; "
+-			. join(", ", $dkim->message_attributes));
+-		print STDERR "DKIM signing - $result_detail; "
++		print STDERR "Debug: DKIM signing - $result_detail; "
+ 			. join(", ", $dkim->message_attributes) . "\n";
+ 	};
+ 	if ($@)
+@@ -387,7 +370,6 @@
+ 		my $E = $@;
+ 		chomp $E;
+ 		$E =~ s/\n/ /gs;
+-		eval { syslog("warning", '%s', "signing error: $E") };
+ 		print STDERR "Warning: signing error: $E\n";
+ 		$result = "temperror";
+ 		$result_detail = "$result ($E)";
+@@ -713,7 +695,7 @@
+ matched domain as the d= value of the generated signature.
+ 
+ Please note that the d= value of the generated signature can also be
+-specified using signature options (see L</"SIGNATURE OPTIONS"). The
++specified using signature options (see L</"SIGNATURE OPTIONS">). The
+ signature options will override the value specified here.
+ 
+ Therefore, if you want to sign all messages, and you are specifying
